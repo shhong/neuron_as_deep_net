@@ -88,7 +88,7 @@ min_seg_length_um = 10.0
 
 # beaurrocracy
 showPlots = False
-resultsSavedIn_rootFolder = '/david.beniaguev/Reseach/Single_Neuron_InOut/ExperimentalData/'
+resultsSavedIn_rootFolder = '../../ExperimentalData/'
 
 useCvode = True
 totalSimDurationInMS = 1000 * totalSimDurationInSec
@@ -308,11 +308,13 @@ def DefineSynapse_GABA_AB(segment, gMax=0.001):
 
 def ConnectEmptyEventGenerator(synapse):
 
-    netConnection = h.NetCon(None,synapse)
+    # create a VecStim object and connect it to the synapse
+    vs = h.VecStim()
+    netConnection = h.NetCon(vs,synapse)
     netConnection.delay = 0
     netConnection.weight[0] = 1
 
-    return netConnection
+    return (vs, netConnection)
 
 
 # create a single image of both excitatory and inhibitory spikes and the dendritic voltage traces
@@ -477,9 +479,11 @@ for simInd in range(numSimulations):
 
     ## run simulation ########################
     allExNetCons = []
+    allExStims = []
     allExNetConEventLists = []
 
     allInhNetCons = []
+    allInhStims = []
     allInhNetConEventLists = []
 
     allExSynapses = []
@@ -497,17 +501,21 @@ for simInd in range(numSimulations):
             assert False, 'Not supported Excitatory Synapse Type'
         allExSynapses.append(exSynapse)
 
-        # connect synapse
-        netConnection = h.NetCon(None,exSynapse)
+        # create a VecStim object and connect it to the synapse
+        stim = h.VecStim()
+        netConnection = h.NetCon(stim,allExSynapses[-1])
         netConnection.delay = 0
         netConnection.weight[0] = 1
 
         # update lists
         allExNetCons.append(netConnection)
+        allExStims.append(stim)
         if segInd in exSpikeTimesMap.keys():
-            allExNetConEventLists.append(exSpikeTimesMap[segInd])
+            allExNetConEventLists.append(
+                h.Vector(exSpikeTimesMap[segInd])
+            )
         else:
-            allExNetConEventLists.append([])
+            allExNetConEventLists.append(h.Vector())
 
         ###### inhibition ######
 
@@ -523,23 +531,24 @@ for simInd in range(numSimulations):
         allInhSynapses.append(inhSynapse)
 
         # connect synapse
-        netConnection = ConnectEmptyEventGenerator(inhSynapse)
+        stim, netConnection = ConnectEmptyEventGenerator(allInhSynapses[-1])
 
         # update lists
         allInhNetCons.append(netConnection)
+        allInhStims.append(stim)
         if segInd in inhSpikeTimesMap.keys():
-            allInhNetConEventLists.append(inhSpikeTimesMap[segInd])
+            allInhNetConEventLists.append(
+                h.Vector(inhSpikeTimesMap[segInd])
+            )
         else:
-            allInhNetConEventLists.append([])  # insert empty list if no event
+            allInhNetConEventLists.append(h.Vector())  # insert empty list if no event
 
     # define function to be run at the begining of the simulation to add synaptic events
-    def AddAllSynapticEvents():
-        for exNetCon, eventsList in zip(allExNetCons,allExNetConEventLists):
-            for eventTime in eventsList:
-                exNetCon.event(eventTime)
-        for inhNetCon, eventsList in zip(allInhNetCons,allInhNetConEventLists):
-            for eventTime in eventsList:
-                inhNetCon.event(eventTime)
+    # replace AddAllSynapticEvents by VecStim based event generator
+    for exStim, exNetCon, eventsList in zip(allExStims,allExNetCons,allExNetConEventLists):
+        exStim.play(eventsList)
+    for inhStim, inhNetCon, eventsList in zip(allInhStims,allInhNetCons,allInhNetConEventLists):
+        inhStim.play(eventsList)
 
     # add voltage and time recordings
 
@@ -570,10 +579,13 @@ for simInd in range(numSimulations):
 
     ## simulate the cell
     simulationStartTime = time.time()
-    # make sure the following line will be run after h.finitialize()
-    fih = h.FInitializeHandler('nrnpython("AddAllSynapticEvents()")')
-    h.finitialize(-76)
-    neuron.run(totalSimDurationInMS)
+
+    # new running routine
+    h.v_init = -76
+    h.init()
+    h.tstop = totalSimDurationInMS
+    # h.xopen('L5PC.ses')
+    h.run()
     singleSimulationDurationInMinutes = (time.time() - simulationStartTime) / 60
     print("single simulation took %.2f minutes" % (singleSimulationDurationInMinutes))
 
