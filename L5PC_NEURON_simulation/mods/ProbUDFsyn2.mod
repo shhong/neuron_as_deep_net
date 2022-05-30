@@ -1,4 +1,4 @@
-TITLE AMPA and NMDA receptor with presynaptic short-term plasticity 
+TITLE AMPA and NMDA receptor with presynaptic short-term plasticity
 
 
 COMMENT
@@ -12,7 +12,7 @@ ENDCOMMENT
 
 NEURON {
 
-        POINT_PROCESS ProbUDFsyn2  
+        POINT_PROCESS ProbUDFsyn2
         RANGE tau_r, tau_d
         RANGE Use, u, Dep, Fac, u0
         RANGE i, g, e, gmax
@@ -24,7 +24,7 @@ PARAMETER {
 
         tau_r = 0.2   (ms)  : dual-exponential conductance profile
         tau_d = 1.7    (ms)  : IMPORTANT: tau_r < tau_d
-        Use = 1.0   (1)   : Utilization of synaptic efficacy (just initial values! Use, Dep and Fac are overwritten by BlueBuilder assigned values) 
+        Use = 1.0   (1)   : Utilization of synaptic efficacy (just initial values! Use, Dep and Fac are overwritten by BlueBuilder assigned values)
         Dep = 100   (ms)  : relaxation time constant from depression
         Fac = 10   (ms)  :  relaxation time constant from facilitation
         e = 0     (mV)  : AMPA and NMDA reversal potential
@@ -33,10 +33,10 @@ PARAMETER {
 }
 
 COMMENT
-The Verbatim block is needed to generate random nos. from a uniform distribution between 0 and 1 
+The Verbatim block is needed to generate random nos. from a uniform distribution between 0 and 1
 for comparison with Pr to decide whether to activate the synapse or not
 ENDCOMMENT
-   
+
 VERBATIM
 
 #include<stdlib.h>
@@ -47,7 +47,7 @@ double nrn_random_pick(void* r);
 void* nrn_random_arg(int argpos);
 
 ENDVERBATIM
-  
+
 
 ASSIGNED {
 
@@ -67,16 +67,16 @@ STATE {
 INITIAL{
 
   LOCAL tp
-        
+
 	A = 0
   B = 0
-	
-        
+
+
 	tp = (tau_r*tau_d)/(tau_d-tau_r)*log(tau_d/tau_r) :time to peak of the conductance
-	      
+
 	factor = -exp(-tp/tau_r)+exp(-tp/tau_d) : Normalization factor - so that when t = tp, gsyn = gpeak
         factor = 1/factor
- 
+
 }
 
 BREAKPOINT {
@@ -94,7 +94,7 @@ DERIVATIVE state{
 
 
 NET_RECEIVE (weight, Pv, Pr, u, tsyn (ms)){
-	
+
         INITIAL{
                 Pv=1
                 u=u0
@@ -105,23 +105,27 @@ NET_RECEIVE (weight, Pv, Pr, u, tsyn (ms)){
         if (Fac > 0) {
                 u = u*exp(-(t - tsyn)/Fac) :update facilitation variable if Fac>0 Eq. 2 in Fuhrmann et al.
            } else {
-                  u = Use  
-           } 
+                  u = Use
+           }
            if(Fac > 0){
                   u = u + Use*(1-u) :update facilitation variable if Fac>0 Eq. 2 in Fuhrmann et al.
-           }    
+           }
 
-        
+
+        if (Dep > 0) {
             Pv  = 1 - (1-Pv) * exp(-(t-tsyn)/Dep) :Probability Pv for a vesicle to be available for release, analogous to the pool of synaptic
                                                  :resources available for release in the deterministic model. Eq. 3 in Fuhrmann et al.
+        } else {
+                Pv = 1
+        }
             Pr  = u * Pv                         :Pr is calculated as Pv * u (running value of Use)
             Pv  = Pv - u * Pv                    :update Pv as per Eq. 3 in Fuhrmann et al.
             :printf("Pv = %g\n", Pv)
             :printf("Pr = %g\n", Pr)
             tsyn = t
-                
+
 		   if (erand() < Pr){
-	
+
                     A = A + weight*factor
                     B = B + weight*factor
                 }
