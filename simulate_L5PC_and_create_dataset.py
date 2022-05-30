@@ -222,7 +222,7 @@ def GetDistanceBetweenSections(sourceSection, destSection):
 
 # AMPA synapse
 def DefineSynapse_AMPA(segment, gMax=0.0004):
-    synapse = h.ProbUDFsyn2(segment)
+    synapse = h.DetUDFsyn2(segment)
 
     synapse.tau_r = 0.3
     synapse.tau_d = 3.0
@@ -238,7 +238,7 @@ def DefineSynapse_AMPA(segment, gMax=0.0004):
 
 # NMDA synapse
 def DefineSynapse_NMDA(segment, gMax=0.0004):
-    synapse = h.ProbAMPANMDA2(segment)
+    synapse = h.DetAMPANMDA2(segment)
 
     synapse.tau_r_AMPA = 0.3
     synapse.tau_d_AMPA = 3.0
@@ -256,7 +256,7 @@ def DefineSynapse_NMDA(segment, gMax=0.0004):
 
 # GABA A synapse
 def DefineSynapse_GABA_A(segment, gMax=0.001):
-    synapse = h.ProbUDFsyn2(segment)
+    synapse = h.DetUDFsyn2(segment)
 
     synapse.tau_r = 0.2
     synapse.tau_d = 8
@@ -272,7 +272,7 @@ def DefineSynapse_GABA_A(segment, gMax=0.001):
 
 # GABA B synapse
 def DefineSynapse_GABA_B(segment, gMax=0.001):
-    synapse = h.ProbUDFsyn2(segment)
+    synapse = h.DetUDFsyn2(segment)
 
     synapse.tau_r = 3.5
     synapse.tau_d = 260.9
@@ -339,9 +339,9 @@ def CreateCombinedColorImage(dendriticVoltageTraces, excitatoryInputSpikes, inhi
 h.load_file('nrngui.hoc')
 h.load_file("import3d.hoc")
 
-morphologyFilename = "morphologies/cell1.asc"
-biophysicalModelFilename = "L5PCbiophys5b.hoc"
-biophysicalModelTemplateFilename = "L5PCtemplate_2.hoc"
+morphologyFilename = "L5PC_NEURON_simulation/morphologies/cell1.asc"
+biophysicalModelFilename = "L5PC_NEURON_simulation/L5PCbiophys5b.hoc"
+biophysicalModelTemplateFilename = "L5PC_NEURON_simulation/L5PCtemplate_2.hoc"
 
 h.load_file(biophysicalModelFilename)
 h.load_file(biophysicalModelTemplateFilename)
@@ -753,5 +753,3 @@ if not os.path.exists(dirToSaveIn):
 
 # pickle everythin
 pickle.dump(experimentDict, open(dirToSaveIn + filenameToSave, "wb"), protocol=2)
-
-
