@@ -5,14 +5,15 @@ import time
 import sys
 import keras
 from keras.models import Model, load_model
-from keras.optimizers import SGD, Nadam
-from keras.layers.normalization import BatchNormalization
+from tensorflow.keras.optimizers import SGD, Nadam
+from keras.layers import BatchNormalization
 from keras.layers import Dense, Dropout, Activation, Flatten, Input, TimeDistributed, Reshape, Permute
 from keras.layers import Conv2D, MaxPooling2D, AveragePooling2D, Conv1D, Cropping1D, UpSampling1D, MaxPooling1D, AveragePooling1D
-from keras.layers.advanced_activations import LeakyReLU, PReLU, ELU
+from keras.layers import LeakyReLU, PReLU, ELU
 from keras.regularizers import l1,l2,l1_l2
 from keras import initializers
 from sklearn import decomposition
+from keras import backend as K
 
 
 # some fixes for python 3
@@ -53,10 +54,10 @@ synapse_type = 'NMDA'
 if synapse_type == 'NMDA':
     num_DVT_components = 20
 
-    train_data_dir = '/Reseach/Single_Neuron_InOut/data/L5PC_NMDA_train/'
-    valid_data_dir = '/Reseach/Single_Neuron_InOut/data/L5PC_NMDA_valid/'
-    test_data_dir  = '/Reseach/Single_Neuron_InOut/data/L5PC_NMDA_test/'
-    models_dir     = '/Reseach/Single_Neuron_InOut/models/NMDA/'
+    train_data_dir = 'L5PC_dataset/L5PC_NMDA_train/'
+    valid_data_dir = 'L5PC_dataset/L5PC_NMDA_valid/'
+    test_data_dir  = 'L5PC_dataset/L5PC_NMDA_test/'
+    models_dir     = 'save_result_NMDA/'
     
 elif synapse_type == 'AMPA':
     num_DVT_components = 30
@@ -470,7 +471,7 @@ def sample_windows_from_sims(sim_experiment_files, batch_size=16, window_size_ms
             
             # randomly sample timepoints for current batch
             sampling_start_time = max(ignore_time_from_start, window_size_ms)
-            selected_time_inds = np.random.choice(range(sampling_start_time,sim_duration_ms),size=batch_size,replace=False)
+            selected_time_inds = np.random.choice(range(sampling_start_time,sim_duration_ms),size=batch_size,replace=True)
             
             # gather batch and yield it
             X_batch       = np.zeros((batch_size, window_size_ms, num_segments))
@@ -549,7 +550,7 @@ class SimulationDataGenerator(keras.utils.Sequence):
         
         # randomly sample timepoints for current batch
         sampling_start_time = max(self.ignore_time_from_start, self.window_size_ms)
-        selected_time_inds = np.random.choice(range(sampling_start_time, self.sim_duration_ms), size=self.batch_size, replace=False)
+        selected_time_inds = np.random.choice(range(sampling_start_time, self.sim_duration_ms), size=self.batch_size, replace=True)
         
         # gather batch and yield it
         X_batch       = np.zeros((self.batch_size, self.window_size_ms, self.num_segments))
@@ -575,7 +576,7 @@ class SimulationDataGenerator(keras.utils.Sequence):
     def on_epoch_end(self):
         'selects new subset of files to draw samples from'
 
-        self.curr_epoch_files_to_use = np.random.choice(self.sim_experiment_files, size=self.num_files_per_epoch, replace=False)
+        self.curr_epoch_files_to_use = np.random.choice(self.sim_experiment_files, size=self.num_files_per_epoch, replace=True)
 
     def load_new_file(self):
         'load new file to draw batches from'

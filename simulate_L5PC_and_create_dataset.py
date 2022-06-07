@@ -88,7 +88,7 @@ min_seg_length_um = 10.0
 
 # beaurrocracy
 showPlots = False
-resultsSavedIn_rootFolder = '../../ExperimentalData/'
+resultsSavedIn_rootFolder = 'ExperimentalData/'
 
 useCvode = True
 totalSimDurationInMS = 1000 * totalSimDurationInSec
